@@ -31,7 +31,8 @@ func NewCipher(key []byte) (cipher.Block, error) {
 	case 128 / 8, 192 / 8, 256 / 8:
 		break
 	}
-	c := ariaCipher{enc: make([]uint32, k), dec: make([]uint32, k)}
+	n := k + 36
+	c := ariaCipher{enc: make([]uint32, n), dec: make([]uint32, n)}
 	expandKey(key, c.enc, c.dec)
 	return &c, nil
 }
