@@ -1,5 +1,7 @@
 # aria-go
 
+[![Build Status](https://travis-ci.org/hallazzang/aria-go.svg?branch=master)](https://travis-ci.org/hallazzang/aria-go)
+[![codecov](https://codecov.io/gh/hallazzang/aria-go/branch/master/graph/badge.svg)](https://codecov.io/gh/hallazzang/aria-go)
 [![godoc-badge]](https://godoc.org/github.com/hallazzang/aria-go)
 [![goreportcard-badge]](https://goreportcard.com/report/github.com/hallazzang/aria-go)
 
