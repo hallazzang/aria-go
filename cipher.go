@@ -9,6 +9,7 @@ import (
 const BlockSize = 16
 
 type ariaCipher struct {
+	k   int // Key size in bytes.
 	enc []uint32
 	dec []uint32
 }
@@ -32,7 +33,11 @@ func NewCipher(key []byte) (cipher.Block, error) {
 		break
 	}
 	n := k + 36
-	c := ariaCipher{enc: make([]uint32, n), dec: make([]uint32, n)}
+	c := ariaCipher{
+		k:   k,
+		enc: make([]uint32, n),
+		dec: make([]uint32, n),
+	}
 	expandKey(key, c.enc, c.dec)
 	return &c, nil
 }
@@ -49,7 +54,7 @@ func (c *ariaCipher) Encrypt(dst, src []byte) {
 	if inexactOverlap(dst[:BlockSize], src[:BlockSize]) {
 		panic("aria: invalid buffer overlap")
 	}
-	cryptBlock(c.enc, dst, src)
+	c.cryptBlock(c.enc, dst, src)
 }
 
 func (c *ariaCipher) Decrypt(dst, src []byte) {
@@ -62,5 +67,9 @@ func (c *ariaCipher) Decrypt(dst, src []byte) {
 	if inexactOverlap(dst[:BlockSize], src[:BlockSize]) {
 		panic("aria: invalid buffer overlap")
 	}
-	cryptBlock(c.dec, dst, src)
+	c.cryptBlock(c.dec, dst, src)
+}
+
+func (c *ariaCipher) rounds() int {
+	return c.k/4 + 8
 }
