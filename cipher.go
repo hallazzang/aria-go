@@ -38,7 +38,7 @@ func NewCipher(key []byte) (cipher.Block, error) {
 		enc: make([]uint32, n),
 		dec: make([]uint32, n),
 	}
-	expandKey(key, c.enc, c.dec)
+	c.expandKey(key)
 	return &c, nil
 }
 

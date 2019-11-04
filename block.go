@@ -2,17 +2,32 @@ package aria
 
 import "encoding/binary"
 
-func cryptBlock(xk []uint32, dst, src []byte) {
-	// TODO: implement
+func (c *ariaCipher) cryptBlock(xk []uint32, dst, src []byte) {
+	n := c.rounds()
+
+	var p [16]byte
+
+	copy(p[:], src[:BlockSize])
+
+	for i := 1; i <= n-1; i++ {
+		if i&1 == 1 {
+			p = roundOdd(p, toBytes(xk[(i-1)*4:i*4]))
+		} else {
+			p = roundEven(p, toBytes(xk[(i-1)*4:i*4]))
+		}
+	}
+
+	p = xor(substitute2(xor(p, toBytes(xk[(n-1)*4:n*4]))), toBytes(xk[n*4:(n+1)*4]))
+
+	copy(dst[:BlockSize], p[:])
 }
 
-func expandKey(key []byte, enc, dec []uint32) {
-	k := len(key)
-	n := 8 + k/4
+func (c *ariaCipher) expandKey(key []byte) {
+	n := c.rounds()
 
 	var kl, kr [16]byte
 
-	for i := 0; i < k; i++ {
+	for i := 0; i < c.k; i++ {
 		if i < 16 {
 			kl[i] = key[i]
 		} else {
@@ -22,7 +37,7 @@ func expandKey(key []byte, enc, dec []uint32) {
 
 	var ck1, ck2, ck3 [16]byte
 
-	switch k {
+	switch c.k {
 	case 128 / 8:
 		ck1 = c1
 		ck2 = c2
@@ -44,56 +59,67 @@ func expandKey(key []byte, enc, dec []uint32) {
 	w2 = xor(roundEven(w1, ck2), w0)
 	w3 = xor(roundOdd(w2, ck3), w1)
 
-	setEncKey(enc, xor(w0, rrot(w1, 19)))
-	setEncKey(enc[4:], xor(w1, rrot(w2, 19)))
-	setEncKey(enc[8:], xor(w2, rrot(w3, 19)))
-	setEncKey(enc[12:], xor(w3, rrot(w0, 19)))
-	setEncKey(enc[16:], xor(w0, rrot(w1, 31)))
-	setEncKey(enc[20:], xor(w1, rrot(w2, 31)))
-	setEncKey(enc[24:], xor(w2, rrot(w3, 31)))
-	setEncKey(enc[28:], xor(w3, rrot(w0, 31)))
-	setEncKey(enc[32:], xor(w0, lrot(w1, 61)))
-	setEncKey(enc[36:], xor(w1, lrot(w2, 61)))
-	setEncKey(enc[40:], xor(w2, lrot(w3, 61)))
-	setEncKey(enc[44:], xor(w3, lrot(w0, 61)))
-	setEncKey(enc[48:], xor(w0, lrot(w1, 31)))
+	copyBytes(c.enc, xor(w0, rrot(w1, 19)))
+	copyBytes(c.enc[4:], xor(w1, rrot(w2, 19)))
+	copyBytes(c.enc[8:], xor(w2, rrot(w3, 19)))
+	copyBytes(c.enc[12:], xor(w3, rrot(w0, 19)))
+	copyBytes(c.enc[16:], xor(w0, rrot(w1, 31)))
+	copyBytes(c.enc[20:], xor(w1, rrot(w2, 31)))
+	copyBytes(c.enc[24:], xor(w2, rrot(w3, 31)))
+	copyBytes(c.enc[28:], xor(w3, rrot(w0, 31)))
+	copyBytes(c.enc[32:], xor(w0, lrot(w1, 61)))
+	copyBytes(c.enc[36:], xor(w1, lrot(w2, 61)))
+	copyBytes(c.enc[40:], xor(w2, lrot(w3, 61)))
+	copyBytes(c.enc[44:], xor(w3, lrot(w0, 61)))
+	copyBytes(c.enc[48:], xor(w0, lrot(w1, 31)))
 	if n > 12 {
-		setEncKey(enc[52:], xor(w1, lrot(w2, 31)))
-		setEncKey(enc[56:], xor(w2, lrot(w3, 31)))
+		copyBytes(c.enc[52:], xor(w1, lrot(w2, 31)))
+		copyBytes(c.enc[56:], xor(w2, lrot(w3, 31)))
 	}
 	if n > 14 {
-		setEncKey(enc[60:], xor(w3, lrot(w0, 31)))
-		setEncKey(enc[64:], xor(w0, lrot(w1, 19)))
+		copyBytes(c.enc[60:], xor(w3, lrot(w0, 31)))
+		copyBytes(c.enc[64:], xor(w0, lrot(w1, 19)))
 	}
 
-	copy(dec, enc[n*4:(n+1)*4])
-	copy(dec[4:], enc[(n-1)*4:n*4])
-	copy(dec[8:], enc[(n-2)*4:(n-1)*4])
-	copy(dec[12:], enc[(n-3)*4:(n-2)*4])
-	copy(dec[16:], enc[(n-4)*4:(n-3)*4])
-	copy(dec[20:], enc[(n-5)*4:(n-4)*4])
-	copy(dec[24:], enc[(n-6)*4:(n-5)*4])
-	copy(dec[28:], enc[(n-7)*4:(n-6)*4])
-	copy(dec[32:], enc[(n-8)*4:(n-7)*4])
-	copy(dec[36:], enc[(n-9)*4:(n-8)*4])
-	copy(dec[40:], enc[(n-10)*4:(n-9)*4])
-	copy(dec[44:], enc[(n-11)*4:(n-10)*4])
-	copy(dec[48:], enc[(n-12)*4:(n-11)*4])
-	if n > 12 {
-		copy(dec[52:], enc[(n-13)*4:(n-12)*4])
-		copy(dec[56:], enc[(n-14)*4:(n-13)*4])
+	copy(c.dec, c.enc[n*4:(n+1)*4])
+
+	for i := 1; i <= n-1; i++ {
+		var t [16]byte
+
+		t = toBytes(c.enc[(n-i)*4 : (n-i+1)*4])
+		t = diffuse(t)
+
+		copyBytes(c.dec[i*4:], t)
 	}
-	if n > 14 {
-		copy(dec[60:], enc[(n-15)*4:(n-14)*4])
-		copy(dec[64:], enc[(n-16)*4:(n-15)*4])
-	}
+
+	copy(c.dec[n*4:], c.enc[:4])
 }
 
-func setEncKey(enc []uint32, x [16]byte) {
-	enc[0] = binary.BigEndian.Uint32(x[:])
-	enc[1] = binary.BigEndian.Uint32(x[4:])
-	enc[2] = binary.BigEndian.Uint32(x[8:])
-	enc[3] = binary.BigEndian.Uint32(x[12:])
+func copyBytes(xk []uint32, x [16]byte) {
+	xk[0] = binary.BigEndian.Uint32(x[:])
+	xk[1] = binary.BigEndian.Uint32(x[4:])
+	xk[2] = binary.BigEndian.Uint32(x[8:])
+	xk[3] = binary.BigEndian.Uint32(x[12:])
+}
+
+func toBytes(u []uint32) (r [16]byte) {
+	r[0] = byte(u[0] >> 24 & 0xff)
+	r[1] = byte(u[0] >> 16 & 0xff)
+	r[2] = byte(u[0] >> 8 & 0xff)
+	r[3] = byte(u[0] & 0xff)
+	r[4] = byte(u[1] >> 24 & 0xff)
+	r[5] = byte(u[1] >> 16 & 0xff)
+	r[6] = byte(u[1] >> 8 & 0xff)
+	r[7] = byte(u[1] & 0xff)
+	r[8] = byte(u[2] >> 24 & 0xff)
+	r[9] = byte(u[2] >> 16 & 0xff)
+	r[10] = byte(u[2] >> 8 & 0xff)
+	r[11] = byte(u[2] & 0xff)
+	r[12] = byte(u[3] >> 24 & 0xff)
+	r[13] = byte(u[3] >> 16 & 0xff)
+	r[14] = byte(u[3] >> 8 & 0xff)
+	r[15] = byte(u[3] & 0xff)
+	return
 }
 
 // Round Function Fo
