@@ -14,6 +14,8 @@ type ariaCipher struct {
 	dec []uint32
 }
 
+// KeySizeError is returned when key size in bytes
+// isn't one of 16, 24, or 32.
 type KeySizeError int
 
 func (k KeySizeError) Error() string {
