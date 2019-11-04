@@ -1,5 +1,11 @@
 # aria-go
 
+[![godoc-badge]](https://godoc.org/github.com/hallazzang/aria-go)
+[![goreportcard-badge]](https://goreportcard.com/report/github.com/hallazzang/aria-go)
+
+[godoc-badge]: https://godoc.org/github.com/hallazzang/aria-go?status.svg
+[goreportcard-badge]: https://goreportcard.com/badge/github.com/hallazzang/aria-go
+
 Go implementation of the [ARIA] encryption algorithm.
 
 [aria]: https://tools.ietf.org/html/rfc5794
