@@ -25,29 +25,48 @@ import (
 
 func main() {
 	key := []byte("0123456789abcdef")
-	input := []byte("fedcba9876543210")
+	plaintext := []byte("fedcba9876543210")
 
 	block, err := aria.NewCipher(key)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("plain: %s\n", input)
+	fmt.Printf("plaintext: %s\n", plaintext)
 
-	cipher := make([]byte, 16)
-	block.Encrypt(cipher, input)
-	fmt.Printf("cipher: % x\n", cipher)
+	ciphertext := make([]byte, 16)
+	block.Encrypt(ciphertext, plaintext)
+	fmt.Printf("ciphertext: % x\n", ciphertext)
 
-	plain := make([]byte, 16)
-	block.Decrypt(plain, cipher)
-	fmt.Printf("decrypted: %s\n", plain)
+	decrypted := make([]byte, 16)
+	block.Decrypt(decrypted, ciphertext)
+	fmt.Printf("decrypted: %s\n", decrypted)
 }
 ```
 
 This will print out:
 
 ```
-plain: fedcba9876543210
-cipher: 93 52 1e f2 67 65 0b d1 fc 75 20 5a d3 44 4d 9d
+plaintext: fedcba9876543210
+ciphertext: 93 52 1e f2 67 65 0b d1 fc 75 20 5a d3 44 4d 9d
 decrypted: fedcba9876543210
 ```
+
+## Benchmarks
+
+Here's the benchmark result compared with `aes` package:
+
+```
+goos: windows
+goarch: amd64
+BenchmarkAES128  	100000000	        17.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAES192  	100000000	        21.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAES256  	100000000	        23.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkARIA128 	 1000000	      1225 ns/op	       0 B/op	       0 allocs/op
+BenchmarkARIA192 	 1000000	      1468 ns/op	       0 B/op	       0 allocs/op
+BenchmarkARIA256 	 1000000	      1610 ns/op	       0 B/op	       0 allocs/op
+```
+
+## License
+
+MIT
