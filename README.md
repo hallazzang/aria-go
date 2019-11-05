@@ -1,12 +1,19 @@
-# aria-go
+<h1 align="center">aria-go</h1>
 
-[![Build Status](https://travis-ci.org/hallazzang/aria-go.svg?branch=master)](https://travis-ci.org/hallazzang/aria-go)
-[![codecov](https://codecov.io/gh/hallazzang/aria-go/branch/master/graph/badge.svg)](https://codecov.io/gh/hallazzang/aria-go)
-[![godoc-badge]](https://godoc.org/github.com/hallazzang/aria-go)
-[![goreportcard-badge]](https://goreportcard.com/report/github.com/hallazzang/aria-go)
-
-[godoc-badge]: https://godoc.org/github.com/hallazzang/aria-go?status.svg
-[goreportcard-badge]: https://goreportcard.com/badge/github.com/hallazzang/aria-go
+<p align="center">
+	<a href="https://travis-ci.org/hallazzang/aria-go">
+		<img alt="Build Status" src="https://travis-ci.org/hallazzang/aria-go.svg?branch=master">
+	</a>
+	<a href="https://codecov.io/gh/hallazzang/aria-go">
+		<img alt="Codecov Status" src="https://codecov.io/gh/hallazzang/aria-go/branch/master/graph/badge.svg">
+	</a>
+	<a href="https://godoc.org/github.com/hallazzang/aria-go">
+		<img alt="Godoc Reference" src="https://godoc.org/github.com/hallazzang/aria-go?status.svg">
+	</a>
+	<a href="https://goreportcard.com/report/github.com/hallazzang/aria-go">
+		<img alt="Goreportcard Badge" src="https://goreportcard.com/badge/github.com/hallazzang/aria-go">
+	</a>
+</p>
 
 Go implementation of the [ARIA] encryption algorithm.
 
