@@ -3,8 +3,76 @@ package aria
 import (
 	"bytes"
 	"crypto/aes"
+	"fmt"
 	"testing"
 )
+
+func TestInvalidKeySize(t *testing.T) {
+	for _, k := range []int{0, 1, 15, 31} {
+		_, err := NewCipher(make([]byte, k))
+		if err == nil {
+			t.Errorf("expected an error for key size %d, got no error", k)
+		}
+		if _, ok := err.(KeySizeError); !ok {
+			t.Errorf("expected KeySizeError, got %v", err)
+		}
+		if msg := err.Error(); msg != fmt.Sprintf("aria: invalid key size %d", k) {
+			t.Errorf("wrong error message %s", msg)
+		}
+	}
+}
+
+func TestBlockSize(t *testing.T) {
+	for _, k := range []int{16, 24, 32} {
+		key := make([]byte, k)
+		block, err := NewCipher(key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if s := block.BlockSize(); s != 16 {
+			t.Errorf("wrong block size %d, expected 16", s)
+		}
+	}
+}
+
+func TestBadBlock(t *testing.T) {
+	type testcase struct {
+		dst, src []byte
+	}
+
+	b := make([]byte, 32)
+
+	for _, k := range []int{16, 24, 32} {
+		for _, tc := range []testcase{
+			{dst: make([]byte, 16), src: make([]byte, 1)},
+			{dst: make([]byte, 1), src: make([]byte, 16)},
+			{dst: b, src: b[1:]},
+		} {
+			block, err := NewCipher(make([]byte, k))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			func(k int, tc testcase) {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Error("expected panic, has no panic")
+					}
+				}()
+				block.Encrypt(tc.dst, tc.src)
+			}(k, tc)
+
+			func(k int, tc testcase) {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Error("expected panic, has no panic")
+					}
+				}()
+				block.Decrypt(tc.dst, tc.src)
+			}(k, tc)
+		}
+	}
+}
 
 func TestEncryptAndDecrypt(t *testing.T) {
 	key := []byte("0123456789abcdef")
